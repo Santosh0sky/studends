@@ -1,60 +1,50 @@
-const { pool } = require('../db');
+const Student = require('./Student');
 
 async function createStudent({ name, email, age }) {
-  const sql = 'INSERT INTO students (name, email, age) VALUES (?, ?, ?)';
-  const [result] = await pool.query(sql, [name, email, age]);
-  console.log(`DB: Inserted student id=${result.insertId}`, { name, email, age });
-  return result.insertId;
+  const student = await Student.create({ name, email, age });
+  console.log(`DB: Inserted student id=${student.id}`, { name, email, age });
+  return student.id;
 }
 
 async function getAllStudents() {
-  const [rows] = await pool.query('SELECT id, name, email, age FROM students');
-  return rows;
+  return Student.findAll({
+    attributes: ['id', 'name', 'email', 'age'],
+    order: [['id', 'ASC']],
+  });
 }
 
 async function getStudentById(id) {
-  const [rows] = await pool.query('SELECT id, name, email, age FROM students WHERE id = ?', [id]);
-  return rows[0];
+  return Student.findByPk(id, {
+    attributes: ['id', 'name', 'email', 'age'],
+  });
 }
 
 async function updateStudent(id, { name, email, age }) {
-  const fields = [];
-  const values = [];
+  const student = await Student.findByPk(id);
+  if (!student) return null;
 
-  if (name !== undefined) {
-    fields.push('name = ?');
-    values.push(name);
-  }
-  if (email !== undefined) {
-    fields.push('email = ?');
-    values.push(email);
-  }
-  if (age !== undefined) {
-    fields.push('age = ?');
-    values.push(age);
-  }
+  const updated = await student.update({
+    ...(name !== undefined ? { name } : {}),
+    ...(email !== undefined ? { email } : {}),
+    ...(age !== undefined ? { age } : {}),
+  });
 
-  if (fields.length === 0) {
-    return { affectedRows: 0 };
-  }
+  console.log(`DB: Updated student id=${id}`, {
+    name: updated.name,
+    email: updated.email,
+    age: updated.age,
+  });
 
-  values.push(id);
-  const sql = `UPDATE students SET ${fields.join(', ')} WHERE id = ?`;
-  const [result] = await pool.query(sql, values);
-
-  if (result.affectedRows > 0) {
-    console.log(`DB: Updated student id=${id}`, { name, email, age });
-  }
-
-  return result;
+  return updated;
 }
 
 async function deleteStudent(id) {
-  const [result] = await pool.query('DELETE FROM students WHERE id = ?', [id]);
-  if (result.affectedRows > 0) {
-    console.log(`DB: Deleted student id=${id}`);
-  }
-  return result;
+  const student = await Student.findByPk(id);
+  if (!student) return null;
+
+  await student.destroy();
+  console.log(`DB: Deleted student id=${id}`);
+  return true;
 }
 
 module.exports = {

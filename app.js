@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { initDb } = require('./initDb');
 const studentRoutes = require('./routes/students');
-const { end } = require('./db');
+const { sequelize } = require('./sequelize');
 
 require('dotenv').config();
 
@@ -36,12 +36,12 @@ initDb()
 
 process.on('SIGINT', async () => {
   console.log('\nGracefully shutting down...');
-  await end();
+  await sequelize.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('\nGracefully shutting down...');
-  await end();
+  await sequelize.close();
   process.exit(0);
 });

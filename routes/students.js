@@ -14,7 +14,8 @@ router.post('/', async (req, res, next) => {
     const student = await studentModel.getStudentById(id);
     res.status(201).json(student);
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
+    // Sequelize unique constraint error
+    if (err.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: 'A student with that email already exists' });
     }
     next(err);
@@ -58,16 +59,16 @@ router.put('/:id', async (req, res, next) => {
     }
 
     const { name, email, age } = req.body;
-    const { affectedRows } = await studentModel.updateStudent(id, { name, email, age });
+    const updated = await studentModel.updateStudent(id, { name, email, age });
 
-    if (affectedRows === 0) {
+    if (!updated) {
       return res.status(404).json({ error: 'Student not found or no fields to update' });
     }
 
-    const updated = await studentModel.getStudentById(id);
     res.json(updated);
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
+    // Sequelize unique constraint error
+    if (err.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: 'A student with that email already exists' });
     }
     next(err);
@@ -82,8 +83,8 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid student id' });
     }
 
-    const { affectedRows } = await studentModel.deleteStudent(id);
-    if (affectedRows === 0) {
+    const deleted = await studentModel.deleteStudent(id);
+    if (!deleted) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
